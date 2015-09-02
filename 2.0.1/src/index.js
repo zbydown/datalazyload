@@ -1,8 +1,14 @@
+/*
+combined files : 
+
+kg/datalazyload/2.0.0/index
+
+*/
 /**
  * @ignore
  * 数据延迟加载组件
  */
-KISSY.add(function (S, D, E, Base, undefined) {
+KISSY.add('kg/datalazyload/2.0.0/index',function (S, D, E, Base, undefined) {
     var win = S.Env.host,
         doc = win.document,
         IMG_SRC_DATA = 'data-ks-lazyload',
@@ -99,6 +105,47 @@ KISSY.add(function (S, D, E, Base, undefined) {
         });
     }
 
+    var backupSize = function(img){
+        var _width,_height;
+        if( D.hasAttr(img,"width")) {
+            _width = D.attr(img,"width");
+            D.attr(img,"_width",_width);
+            D.removeAttr(img, "width");
+        }
+        if( D.hasAttr(img,"height")) {
+            _height = D.attr(img,"height");
+            D.attr(img,"_height",_height);
+            D.removeAttr(img, "height");
+        }
+    }
+
+    var recoverSize = function (imgorev){
+        var img ;
+        try {
+            img = imgorev.currentTarget || imgorev.srcElement || imgorev.target ;
+        }catch(e){
+        }
+        if(!img){
+            img = imgorev;
+        }
+
+        var _width,_height;
+        if( D.hasAttr(img,"_width")) {
+            _width = D.attr(img,"_width");
+            D.attr(img,"width",_width);
+            D.removeAttr(img, "_width");
+        }
+        if( D.hasAttr(img,"_height")) {
+            _height = D.attr(img,"_height");
+            D.attr(img,"height",_height);
+            D.removeAttr(img, "_height");
+        }
+        try{
+            E.detach(img,"load",recoverSize);
+        }catch(e){
+        }
+    }
+
     // 加载图片 src
     var loadImgSrc = function (img, flag, onStart, webpReplacer) {
         flag = flag || IMG_SRC_DATA;
@@ -124,6 +171,9 @@ KISSY.add(function (S, D, E, Base, undefined) {
                     });
                 });
             } else {
+                if(D.hasAttr(img,"_width")||D.hasAttr(img,"_height")) {
+                    E.on(img, "load", recoverSize);
+                }
                 setSrc(param.src);
             }
         }
@@ -358,6 +408,26 @@ KISSY.add(function (S, D, E, Base, undefined) {
         return r.bottom >= r.top && r.right >= r.left;
     }
 
+    // 图片真实长宽(亦可用来判断图片是否加载)
+    function naturalWidth(img){
+        if(img.naturalWidth)
+            return img.naturalWidth;
+        else{
+            var _img = new Image();
+            _img.src = img.src;
+            return _img.width;
+        }
+    }
+    function naturalHeight(img){
+        if(img.naturalWidth)
+            return img.naturalHeight;
+        else{
+            var _img = new Image();
+            _img.src = img.src;
+            return _img.height;
+        }
+    }
+
     S.extend(DataLazyload, Base, {
         /**
          * attach scroll/resize event
@@ -532,7 +602,7 @@ KISSY.add(function (S, D, E, Base, undefined) {
                             };
                         });
 
-                        if (img.offsetWidth) {
+                        if (naturalWidth(img)) {
                             self.addCallback(img, self.imgHandle);
                         } else {
                             self._counter++;
@@ -543,6 +613,7 @@ KISSY.add(function (S, D, E, Base, undefined) {
                             if (!img.src) {
                                 self.onPlaceHolder(function (placeholder) {
                                     if (!img.src) {
+                                        backupSize(img);
                                         img.src = placeholder;
                                     }
                                 });
@@ -793,3 +864,4 @@ KISSY.add(function (S, D, E, Base, undefined) {
  *   - 2010-04-05 yubo 重构，使得对 YUI 的依赖仅限于 YDOM
  *   - 2009-12-17 yubo 将 imglazyload 升级为 datalazyload, 支持 textarea 方式延迟和特定元素即将出现时的回调函数
  */
+
